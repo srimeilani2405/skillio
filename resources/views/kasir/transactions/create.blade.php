@@ -31,7 +31,7 @@
                                     $hariString = is_array($hariArray) ? implode(', ', $hariArray) : ($course->hari ?? '-');
                                     $jamMulai = $course->jam_mulai ? date('H:i', strtotime($course->jam_mulai)) : '-';
                                     $jamSelesai = $course->jam_selesai ? date('H:i', strtotime($course->jam_selesai)) : '-';
-                                    $isKuotaHabis = $sisaKuota <= 0; // Cek apakah kuota habis
+                                    $isKuotaHabis = $sisaKuota <= 0;
                                 @endphp
                                 <option value="{{ $course->id_paket }}" 
                                         data-id="{{ $course->id_paket }}"
@@ -60,7 +60,6 @@
                                 </option>
                             @endforeach
                         </select>
-                        
                     </div>
 
                     <div class="mb-3">
@@ -195,10 +194,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// ========== VARIABEL GLOBAL ==========
 let selectedPackages = [];
 
-// ========== FUNGSI UNTUK MEMASTIKAN JAM VALID ==========
 function formatJamDisplay(jamValue) {
     if (!jamValue || jamValue === '-' || jamValue === 'null' || jamValue === '' || jamValue === undefined) {
         return 'Tidak tersedia';
@@ -206,7 +203,6 @@ function formatJamDisplay(jamValue) {
     return jamValue;
 }
 
-// ========== RENDER TABEL DETAIL ==========
 function renderDetailTable() {
     let tbody = document.getElementById('detailTransaksiBody');
     let total = 0;
@@ -226,7 +222,6 @@ function renderDetailTable() {
         
         let jamMulaiDisplay = formatJamDisplay(item.jam_mulai);
         let jamSelesaiDisplay = formatJamDisplay(item.jam_selesai);
-        
         let jamMulaiClass = (jamMulaiDisplay !== 'Tidak tersedia') ? 'bg-success' : 'bg-secondary';
         let jamSelesaiClass = (jamSelesaiDisplay !== 'Tidak tersedia') ? 'bg-success' : 'bg-secondary';
         
@@ -264,13 +259,11 @@ function renderDetailTable() {
     hitungKembalian();
 }
 
-// ========== HAPUS PAKET ==========
 function removePackage(index) {
     selectedPackages.splice(index, 1);
     renderDetailTable();
 }
 
-// ========== CEK APAKAH PAKET VALID (SISA KUOTA > 0) ==========
 function isPaketValid(selectedOption) {
     let sisaKuota = parseInt(selectedOption.dataset.sisa) || 0;
     let isHabis = selectedOption.dataset.kuotaHabis === 'true';
@@ -279,7 +272,7 @@ function isPaketValid(selectedOption) {
         Swal.fire({
             icon: 'error',
             title: 'Kuota Habis!',
-            text: `Maaf, paket "${selectedOption.dataset.nama}" sudah habis kuota (Sisa: ${sisaKuota}). Tidak bisa melakukan transaksi untuk paket ini.`,
+            text: `Maaf, paket "${selectedOption.dataset.nama}" sudah habis kuota. Tidak bisa melakukan transaksi.`,
             confirmButtonColor: '#e74a3b'
         });
         return false;
@@ -287,42 +280,31 @@ function isPaketValid(selectedOption) {
     return true;
 }
 
-// ========== TAMBAH PAKET ==========
 document.getElementById('id_paket').addEventListener('change', function() {
     let selectedOption = this.options[this.selectedIndex];
     
-    // Validasi: cek apakah option disabled atau kuota habis
     if (selectedOption.disabled) {
         Swal.fire({
             icon: 'error',
             title: 'Kuota Habis!',
-            text: 'Paket kursus ini sudah habis kuota dan tidak dapat ditambahkan ke transaksi.',
+            text: 'Paket kursus ini sudah habis kuota.',
             confirmButtonColor: '#e74a3b'
         });
         this.value = '';
         return;
     }
     
-    // Validasi tambahan via dataset
     if (!isPaketValid(selectedOption)) {
         this.value = '';
         return;
     }
     
     if (this.value && selectedOption.dataset.harga_kursus) {
-        
         let rawJamMulai = selectedOption.dataset.jam_mulai;
         let rawJamSelesai = selectedOption.dataset.jam_selesai;
         
-        let jamMulaiFinal = '-';
-        if (rawJamMulai && rawJamMulai !== '' && rawJamMulai !== 'null' && rawJamMulai !== '-') {
-            jamMulaiFinal = rawJamMulai;
-        }
-        
-        let jamSelesaiFinal = '-';
-        if (rawJamSelesai && rawJamSelesai !== '' && rawJamSelesai !== 'null' && rawJamSelesai !== '-') {
-            jamSelesaiFinal = rawJamSelesai;
-        }
+        let jamMulaiFinal = (rawJamMulai && rawJamMulai !== '' && rawJamMulai !== 'null' && rawJamMulai !== '-') ? rawJamMulai : '-';
+        let jamSelesaiFinal = (rawJamSelesai && rawJamSelesai !== '' && rawJamSelesai !== 'null' && rawJamSelesai !== '-') ? rawJamSelesai : '-';
         
         let paket = {
             id_paket: parseInt(this.value),
@@ -341,7 +323,6 @@ document.getElementById('id_paket').addEventListener('change', function() {
             sisa: parseInt(selectedOption.dataset.sisa) || 0
         };
         
-        // Cek duplikat
         let exists = selectedPackages.some(p => p.id_paket === paket.id_paket);
         if (exists) {
             Swal.fire({ 
@@ -354,20 +335,10 @@ document.getElementById('id_paket').addEventListener('change', function() {
             selectedPackages.push(paket);
             renderDetailTable();
         }
-        
-        // Reset select
         this.value = '';
     }
 });
 
-// Tampilkan warning jika ada paket yang habis
-document.querySelectorAll('#id_paket option').forEach(option => {
-    if (option.disabled) {
-        document.getElementById('kuotaWarning').style.display = 'inline-block';
-    }
-});
-
-// ========== HITUNG KEMBALIAN ==========
 function hitungKembalian() {
     let totalHarga = parseInt(document.getElementById('total_harga').value) || 0;
     let uangBayar = parseInt(document.getElementById('uang_bayar').value) || 0;
@@ -385,37 +356,19 @@ function hitungKembalian() {
 
 document.getElementById('uang_bayar').addEventListener('input', hitungKembalian);
 
-// ========== SUBMIT TRANSAKSI ==========
 document.getElementById('formTransaksi').addEventListener('submit', function(e) {
     e.preventDefault();
     
     if (selectedPackages.length === 0) {
-        Swal.fire({ 
-            icon: 'error', 
-            title: 'Gagal!', 
-            text: 'Pilih minimal 1 paket kursus!',
-            confirmButtonColor: '#e74a3b'
-        });
+        Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Pilih minimal 1 paket kursus!', confirmButtonColor: '#e74a3b' });
         return;
     }
     
-    // Validasi ulang kuota sebelum submit (antisipasi perubahan data)
-    let hasQuotaIssue = false;
     for (let paket of selectedPackages) {
         if (paket.sisa <= 0) {
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'Kuota Habis!', 
-                text: `Paket "${paket.nama}" sudah habis kuota. Transaksi tidak dapat dilanjutkan. Silakan hapus paket tersebut.`,
-                confirmButtonColor: '#e74a3b'
-            });
-            hasQuotaIssue = true;
-            break;
+            Swal.fire({ icon: 'error', title: 'Kuota Habis!', text: `Paket "${paket.nama}" sudah habis kuota.`, confirmButtonColor: '#e74a3b' });
+            return;
         }
-    }
-    
-    if (hasQuotaIssue) {
-        return;
     }
     
     let totalHarga = parseInt(document.getElementById('total_harga').value);
@@ -423,29 +376,16 @@ document.getElementById('formTransaksi').addEventListener('submit', function(e) 
     let idCustomer = document.getElementById('id_customer').value;
     
     if (!idCustomer) {
-        Swal.fire({ 
-            icon: 'error', 
-            title: 'Gagal!', 
-            text: 'Pilih customer terlebih dahulu!',
-            confirmButtonColor: '#e74a3b'
-        });
+        Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Pilih customer terlebih dahulu!', confirmButtonColor: '#e74a3b' });
         return;
     }
     
     if (uangBayar < totalHarga) {
-        Swal.fire({ 
-            icon: 'error', 
-            title: 'Gagal!', 
-            text: 'Uang bayar kurang dari total harga!',
-            confirmButtonColor: '#e74a3b'
-        });
+        Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Uang bayar kurang dari total harga!', confirmButtonColor: '#e74a3b' });
         return;
     }
     
-    let paketData = selectedPackages.map(p => ({ 
-        id_paket: p.id_paket, 
-        jumlah: 1 
-    }));
+    let paketData = selectedPackages.map(p => ({ id_paket: p.id_paket, jumlah: 1 }));
     
     let submitBtn = document.getElementById('btnSubmit');
     submitBtn.disabled = true;
@@ -478,30 +418,19 @@ document.getElementById('formTransaksi').addEventListener('submit', function(e) 
                 window.location.href = '{{ route("kasir.transactions.index") }}';
             });
         } else {
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'GAGAL!', 
-                text: data.message,
-                confirmButtonColor: '#e74a3b'
-            });
+            Swal.fire({ icon: 'error', title: 'GAGAL!', text: data.message, confirmButtonColor: '#e74a3b' });
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-save"></i> Proses Transaksi';
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        Swal.fire({ 
-            icon: 'error', 
-            title: 'ERROR!', 
-            text: error.message,
-            confirmButtonColor: '#e74a3b'
-        });
+        Swal.fire({ icon: 'error', title: 'ERROR!', text: error.message, confirmButtonColor: '#e74a3b' });
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-save"></i> Proses Transaksi';
     });
 });
 
-// ========== SIMPAN CUSTOMER BARU ==========
+// ← FIX: Reset manual per field, BUKAN reset seluruh form
 document.getElementById('formCustomerBaru').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -534,7 +463,13 @@ document.getElementById('formCustomerBaru').addEventListener('submit', function(
             select.value = data.customer_id;
             
             bootstrap.Modal.getInstance(document.getElementById('modalCustomerBaru')).hide();
-            document.getElementById('formCustomerBaru').reset();
+            
+            // ← FIX: Reset hanya field modal, paket di tabel tidak ikut hilang
+            document.getElementById('nama_customer').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('no_telp').value = '';
+            document.getElementById('alamat').value = '';
+            document.getElementById('jenis_kelamin').value = '';
             
             Swal.fire({ 
                 icon: 'success', 
@@ -544,23 +479,13 @@ document.getElementById('formCustomerBaru').addEventListener('submit', function(
                 showConfirmButton: false 
             });
         } else {
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'Gagal!', 
-                text: data.message,
-                confirmButtonColor: '#e74a3b'
-            });
+            Swal.fire({ icon: 'error', title: 'Gagal!', text: data.message, confirmButtonColor: '#e74a3b' });
         }
         btn.disabled = false;
         btn.innerHTML = 'Simpan';
     })
     .catch(error => {
-        Swal.fire({ 
-            icon: 'error', 
-            title: 'Error!', 
-            text: error.message,
-            confirmButtonColor: '#e74a3b'
-        });
+        Swal.fire({ icon: 'error', title: 'Error!', text: error.message, confirmButtonColor: '#e74a3b' });
         btn.disabled = false;
         btn.innerHTML = 'Simpan';
     });
@@ -568,17 +493,9 @@ document.getElementById('formCustomerBaru').addEventListener('submit', function(
 </script>
 
 <style>
-    .table th, .table td {
-        vertical-align: middle;
-    }
-    .badge {
-        font-size: 0.85rem;
-        padding: 5px 10px;
-    }
-    select option:disabled {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
+    .table th, .table td { vertical-align: middle; }
+    .badge { font-size: 0.85rem; padding: 5px 10px; }
+    select option:disabled { background-color: #f8d7da; color: #721c24; }
 </style>
 
 @endsection

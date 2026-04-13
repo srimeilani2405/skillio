@@ -15,7 +15,7 @@ class Course extends Model
     protected $fillable = [
         'nama',
         'id_mapel',
-        'mata_pelajaran', 
+        'mata_pelajaran',
         'id_kategori',
         'id_instructors',
         'harga',
@@ -31,9 +31,9 @@ class Course extends Model
     ];
 
     protected $casts = [
-        'hari' => 'array',
-        'jam_mulai' => 'datetime:H:i',
-        'jam_selesai' => 'datetime:H:i',
+        'hari'       => 'array',
+        'jam_mulai'  => 'datetime:H:i',
+        'jam_selesai'=> 'datetime:H:i',
     ];
 
     // --- RELASI ---
@@ -55,21 +55,18 @@ class Course extends Model
 
     public function detailTransaksis()
     {
-        // Pastikan nama model DetailTransaksi dan foreign key-nya benar
         return $this->hasMany(DetailTransaksi::class, 'id_paket', 'id_paket');
     }
 
-    // --- ACCESSOR & LOGIKA KUOTA (PENTING UNTUK DASHBOARD) ---
+    // --- ACCESSOR & LOGIKA KUOTA ---
 
     public function getTerdaftarAttribute()
     {
-        // Menghitung jumlah peserta yang sudah beli paket ini
         return $this->detailTransaksis()->sum('jumlah');
     }
 
     public function sisaKuota()
     {
-        // Fungsi yang dipanggil di Dashboard Kasir
         return $this->kuota_peserta - $this->terdaftar;
     }
 
@@ -78,13 +75,23 @@ class Course extends Model
         return $this->sisaKuota() > 0;
     }
 
-    // --- FORMATTING ---
 
-    public function getJamMulaiFormattedAttribute() {
+    public function checkAndUpdateStatus()
+    {
+        if ($this->sisaKuota() <= 0 && $this->status === 'aktif') {
+            $this->update(['status' => 'nonaktif']);
+        }
+    }
+
+
+
+    public function getJamMulaiFormattedAttribute()
+    {
         return $this->jam_mulai ? $this->jam_mulai->format('H:i') : '-';
     }
 
-    public function getJamSelesaiFormattedAttribute() {
+    public function getJamSelesaiFormattedAttribute()
+    {
         return $this->jam_selesai ? $this->jam_selesai->format('H:i') : '-';
     }
 }

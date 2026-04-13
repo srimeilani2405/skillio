@@ -94,8 +94,7 @@
                         </td>
                         <td style="padding: 12px 8px; text-align: center;">
                             <a href="{{ route('owner.products.show', $course->id_paket) }}"
-                               class="btn btn-info btn-sm text-white rounded-circle" 
-                               style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+                               class="btn btn-info btn-sm text-white">
                                 <i class="fas fa-eye"></i>
                             </a>
                         </td>

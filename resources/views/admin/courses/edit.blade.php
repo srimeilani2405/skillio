@@ -3,6 +3,12 @@
 @section('title', 'Edit Paket Kursus')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .flatpickr-time { border: none !important; }
+    .input-group-text { background-color: #f8f9fc; }
+</style>
+
 <div class="card">
     <div class="card-header">
         <h4 class="mb-0"><i class="fas fa-edit"></i> Edit Paket Kursus</h4>
@@ -215,6 +221,52 @@
                         @enderror
                     </div>
 
+                    {{-- JAM MULAI & SELESAI --}}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Jadwal Per Sesi <span class="text-danger">*</span>
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="input-group">
+                                    <input type="text"
+                                           name="jam_mulai_full"
+                                           id="jam_mulai_full"
+                                           class="form-control bg-white @error('jam_mulai_full') is-invalid @enderror"
+                                           placeholder="08:00 AM"
+                                           value="{{ old('jam_mulai_full', $course->jam_mulai ? \Carbon\Carbon::parse($course->jam_mulai)->format('h:i A') : '') }}"
+                                           readonly
+                                           required>
+                                    <span class="input-group-text"><i class="far fa-clock"></i></span>
+                                </div>
+                                <small class="text-muted">Jam Mulai</small>
+                                @error('jam_mulai_full')
+                                    <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-6">
+                                <div class="input-group">
+                                    <input type="text"
+                                           name="jam_selesai_full"
+                                           id="jam_selesai_full"
+                                           class="form-control bg-white @error('jam_selesai_full') is-invalid @enderror"
+                                           placeholder="10:00 AM"
+                                           value="{{ old('jam_selesai_full', $course->jam_selesai ? \Carbon\Carbon::parse($course->jam_selesai)->format('h:i A') : '') }}"
+                                           readonly
+                                           required>
+                                    <span class="input-group-text"><i class="far fa-clock"></i></span>
+                                </div>
+                                <small class="text-muted">Jam Selesai</small>
+                                @error('jam_selesai_full')
+                                    <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div id="durasiOtomatis" class="text-info small mt-1" style="display:none;">
+                            <i class="fas fa-hourglass-half"></i> Durasi: <span id="durasiMenit"></span> menit
+                        </div>
+                    </div>
+
                     {{-- DURASI PER SESI --}}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
@@ -222,9 +274,12 @@
                         </label>
                         <input type="number"
                                name="durasi_per_sesi"
+                               id="durasi_per_sesi_display"
                                class="form-control @error('durasi_per_sesi') is-invalid @enderror"
                                value="{{ old('durasi_per_sesi', $course->durasi_per_sesi) }}"
-                               min="1" required>
+                               min="1"
+                               readonly>
+                        <div class="form-text">Terisi otomatis dari jam mulai &amp; selesai.</div>
                         @error('durasi_per_sesi')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -297,6 +352,9 @@
                 </div>
             </div>
 
+            {{-- Hidden fields untuk durasi_per_sesi (dikirim ke controller) --}}
+            <input type="hidden" name="durasi_per_sesi" id="durasi_per_sesi_hidden" value="{{ old('durasi_per_sesi', $course->durasi_per_sesi) }}">
+
             <hr>
 
             <div class="d-flex gap-2">
@@ -344,100 +402,124 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-document.querySelectorAll('.hari-checkbox').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-        var checked = document.querySelectorAll('.hari-checkbox:checked');
-        var warning = document.getElementById('hariWarning');
-        if (checked.length > 2) {
-            this.checked = false;
-            warning.style.display = 'block';
-        } else {
-            warning.style.display = 'none';
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── 1. Flatpickr untuk Jam Mulai & Selesai ──────────────────────────────
+    var jamMulaiDefault  = document.getElementById('jam_mulai_full').value  || '08:00 AM';
+    var jamSelesaiDefault = document.getElementById('jam_selesai_full').value || '10:00 AM';
+
+    var configTime = {
+        enableTime : true,
+        noCalendar : true,
+        dateFormat : "h:i K",
+        onChange   : function () { updateDurasi(); }
+    };
+
+    var jamMulaiPicker  = flatpickr("#jam_mulai_full",  { ...configTime, defaultDate: jamMulaiDefault });
+    var jamSelesaiPicker = flatpickr("#jam_selesai_full", { ...configTime, defaultDate: jamSelesaiDefault });
+
+    function updateDurasi() {
+        var start = jamMulaiPicker.selectedDates[0];
+        var end   = jamSelesaiPicker.selectedDates[0];
+
+        if (start && end) {
+            var diff = (end.getTime() - start.getTime()) / 1000 / 60;
+            if (diff < 0) diff += 1440; // lewat tengah malam
+
+            document.getElementById('durasiMenit').innerText        = diff;
+            document.getElementById('durasiOtomatis').style.display = 'block';
+            document.getElementById('durasi_per_sesi_display').value = diff;
+            document.getElementById('durasi_per_sesi_hidden').value  = diff;
         }
-    });
-});
-
-document.getElementById('btnSimpanMapel').addEventListener('click', function() {
-    var nama     = document.getElementById('input_nama_mapel').value.trim();
-    var errorDiv = document.getElementById('error_mapel');
-
-    if (!nama) {
-        errorDiv.style.display = 'block';
-        return;
     }
-    errorDiv.style.display = 'none';
 
-    var btn = this;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    // Jalankan satu kali agar durasi terisi dari data existing
+    updateDurasi();
 
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/admin/mapel/store-quick', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
-    xhr.setRequestHeader('Accept', 'application/json');
-
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            var data = JSON.parse(xhr.responseText);
-            if (data.success) {
-                var select = document.getElementById('id_mapel');
-                var option = document.createElement('option');
-                option.value = data.id;
-                option.text  = data.nama;
-                select.appendChild(option);
-                select.value = data.id;
-
-                bootstrap.Modal.getInstance(document.getElementById('modalTambahMapel')).hide();
-                document.getElementById('input_nama_mapel').value = '';
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: data.nama + ' berhasil ditambahkan!',
-                    confirmButtonColor: '#1cc88a',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
+    // ── 2. Batasi Checklist Hari maks. 2 ────────────────────────────────────
+    document.querySelectorAll('.hari-checkbox').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            var checked = document.querySelectorAll('.hari-checkbox:checked');
+            var warning = document.getElementById('hariWarning');
+            if (checked.length > 2) {
+                this.checked = false;
+                warning.style.display = 'block';
             } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal!',
-                    text: data.message,
-                    confirmButtonColor: '#e74a3b'
-                });
+                warning.style.display = 'none';
             }
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Server Error!',
-                text: 'Terjadi kesalahan pada server (kode: ' + xhr.status + ')',
-                confirmButtonColor: '#e74a3b'
-            });
-        }
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
-    };
-
-    xhr.onerror = function() {
-        Swal.fire({
-            icon: 'error',
-            title: 'Koneksi Error!',
-            text: 'Tidak dapat terhubung ke server. Coba lagi.',
-            confirmButtonColor: '#e74a3b'
         });
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
-    };
+    });
 
-    xhr.send(JSON.stringify({ nama_mapel: nama }));
-});
+    // ── 3. Ajax Tambah Mapel ─────────────────────────────────────────────────
+    document.getElementById('btnSimpanMapel').addEventListener('click', function () {
+        var nama     = document.getElementById('input_nama_mapel').value.trim();
+        var errorDiv = document.getElementById('error_mapel');
 
-document.getElementById('modalTambahMapel').addEventListener('hidden.bs.modal', function() {
-    document.getElementById('input_nama_mapel').value = '';
-    document.getElementById('error_mapel').style.display = 'none';
+        if (!nama) {
+            errorDiv.style.display = 'block';
+            return;
+        }
+        errorDiv.style.display = 'none';
+
+        var btn = this;
+        btn.disabled    = true;
+        btn.innerHTML   = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/admin/mapel/store-quick', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+        xhr.setRequestHeader('Accept', 'application/json');
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                var data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    var select = document.getElementById('id_mapel');
+                    var option = document.createElement('option');
+                    option.value = data.id;
+                    option.text  = data.nama;
+                    select.appendChild(option);
+                    select.value = data.id;
+
+                    bootstrap.Modal.getInstance(document.getElementById('modalTambahMapel')).hide();
+                    document.getElementById('input_nama_mapel').value = '';
+
+                    Swal.fire({
+                        icon               : 'success',
+                        title              : 'Berhasil!',
+                        text               : data.nama + ' berhasil ditambahkan!',
+                        confirmButtonColor : '#1cc88a',
+                        timer              : 2000,
+                        timerProgressBar   : true
+                    });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Gagal!', text: data.message, confirmButtonColor: '#e74a3b' });
+                }
+            } else {
+                Swal.fire({ icon: 'error', title: 'Server Error!', text: 'Kode: ' + xhr.status, confirmButtonColor: '#e74a3b' });
+            }
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
+        };
+
+        xhr.onerror = function () {
+            Swal.fire({ icon: 'error', title: 'Koneksi Error!', text: 'Tidak dapat terhubung ke server.', confirmButtonColor: '#e74a3b' });
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Simpan';
+        };
+
+        xhr.send(JSON.stringify({ nama_mapel: nama }));
+    });
+
+    document.getElementById('modalTambahMapel').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('input_nama_mapel').value  = '';
+        document.getElementById('error_mapel').style.display = 'none';
+    });
+
 });
 </script>
 

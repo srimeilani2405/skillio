@@ -102,39 +102,37 @@
                     <div class="list-group list-group-flush">
                         @foreach($recentLogs as $log)
                             <div class="list-group-item d-flex align-items-start gap-3 py-3">
-                                {{-- ICON BERDASARKAN AKSI --}}
                                 <div class="flex-shrink-0">
                                     @if($log->action == 'Tambah')
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
                                              style="width: 40px; height: 40px; background: #d4edda;">
                                             <i class="fas fa-plus-circle text-success fa-lg"></i>
                                         </div>
                                     @elseif($log->action == 'Edit')
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
                                              style="width: 40px; height: 40px; background: #fff3cd;">
                                             <i class="fas fa-edit text-warning fa-lg"></i>
                                         </div>
                                     @elseif($log->action == 'Hapus')
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
                                              style="width: 40px; height: 40px; background: #f8d7da;">
                                             <i class="fas fa-trash-alt text-danger fa-lg"></i>
                                         </div>
                                     @else
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
                                              style="width: 40px; height: 40px; background: #e2e3e5;">
                                             <i class="fas fa-info-circle text-secondary fa-lg"></i>
                                         </div>
                                     @endif
                                 </div>
 
-                                {{-- ISI LOG --}}
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <strong class="mb-0">{{ $log->user->name ?? 'System' }}</strong>
                                         <small class="text-muted">{{ $log->created_at->diffForHumans() }}</small>
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="badge 
+                                        <span class="badge
                                             @if($log->action == 'Tambah') bg-success
                                             @elseif($log->action == 'Edit') bg-warning text-dark
                                             @elseif($log->action == 'Hapus') bg-danger
@@ -159,17 +157,32 @@
     </div>
 </div>
 
-{{-- CHART JS --}}
+<style>
+    .list-group-item {
+        transition: all 0.2s ease;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fc;
+    }
+</style>
+
+@endsection
+
+@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('grafikTransaksi').getContext('2d');
+    // Data dari controller
+    var bulanLabel = <?php echo json_encode($bulanLabel); ?>;
+    var grafikData = <?php echo json_encode($grafikData); ?>;
+
+    var ctx = document.getElementById('grafikTransaksi').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: @json($bulanLabel),
+            labels: bulanLabel,
             datasets: [{
                 label: 'Pendapatan (Rp)',
-                data: @json($grafikData),
+                data: grafikData,
                 backgroundColor: 'rgba(78, 115, 223, 0.7)',
                 borderColor: 'rgba(78, 115, 223, 1)',
                 borderWidth: 1,
@@ -195,14 +208,4 @@
         }
     });
 </script>
-
-<style>
-    .list-group-item {
-        transition: all 0.2s ease;
-    }
-    .list-group-item:hover {
-        background-color: #f8f9fc;
-    }
-</style>
-
-@endsection
+@endpush

@@ -19,25 +19,21 @@ class Transaction extends Model
         'uang_kembali',
     ];
 
-    // Relasi ke Customer
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'id_customer', 'id_customer');
     }
 
-    // Relasi ke User
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user', 'id');
     }
 
-    // ✅ RELASI KE DETAIL TRANSAKSI (YANG BENAR)
     public function details()
     {
         return $this->hasMany(DetailTransaksi::class, 'id_transaksi', 'id_transaksi');
     }
 
-    // ✅ ALIAS untuk detailTransaksis (jika ada yang memanggil)
     public function detailTransaksis()
     {
         return $this->hasMany(DetailTransaksi::class, 'id_transaksi', 'id_transaksi');
