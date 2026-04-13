@@ -88,73 +88,7 @@
         </div>
     </div>
 
-    {{-- ACTIVITY LOG KHUSUS ADMIN --}}
-    <div class="col-md-5">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3 fw-semibold d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-history me-2"></i> Activity Log (Admin)</span>
-                <a href="{{ route('admin.activity-logs.index') }}" class="btn btn-sm btn-link text-decoration-none">
-                    Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
-                </a>
-            </div>
-            <div class="card-body p-0">
-                @if($recentLogs->count() > 0)
-                    <div class="list-group list-group-flush">
-                        @foreach($recentLogs as $log)
-                            <div class="list-group-item d-flex align-items-start gap-3 py-3">
-                                <div class="flex-shrink-0">
-                                    @if($log->action == 'Tambah')
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                             style="width: 40px; height: 40px; background: #d4edda;">
-                                            <i class="fas fa-plus-circle text-success fa-lg"></i>
-                                        </div>
-                                    @elseif($log->action == 'Edit')
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                             style="width: 40px; height: 40px; background: #fff3cd;">
-                                            <i class="fas fa-edit text-warning fa-lg"></i>
-                                        </div>
-                                    @elseif($log->action == 'Hapus')
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                             style="width: 40px; height: 40px; background: #f8d7da;">
-                                            <i class="fas fa-trash-alt text-danger fa-lg"></i>
-                                        </div>
-                                    @else
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                             style="width: 40px; height: 40px; background: #e2e3e5;">
-                                            <i class="fas fa-info-circle text-secondary fa-lg"></i>
-                                        </div>
-                                    @endif
-                                </div>
-
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <strong class="mb-0">{{ $log->user->name ?? 'System' }}</strong>
-                                        <small class="text-muted">{{ $log->created_at->diffForHumans() }}</small>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge
-                                            @if($log->action == 'Tambah') bg-success
-                                            @elseif($log->action == 'Edit') bg-warning text-dark
-                                            @elseif($log->action == 'Hapus') bg-danger
-                                            @else bg-secondary
-                                            @endif">
-                                            {{ $log->action }}
-                                        </span>
-                                        <span class="text-muted small">{{ Str::limit($log->description, 50) }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="text-center py-5">
-                        <i class="fas fa-history fa-3x text-muted mb-3 d-block"></i>
-                        <p class="text-muted mb-0">Belum ada aktivitas</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
+    
 </div>
 
 <style>
